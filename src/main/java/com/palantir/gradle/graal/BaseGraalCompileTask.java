@@ -47,9 +47,11 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
     private final ListProperty<String> options = getProject().getObjects().listProperty(String.class);
     private final RegularFileProperty outputFile = getProject().getObjects().fileProperty();
     private final Property<String> graalVersion = getProject().getObjects().property(String.class);
+    private final Property<String> javaVersion = getProject().getObjects().property(String.class);
     private final Property<Configuration> classpath = getProject().getObjects().property(Configuration.class);
     private final RegularFileProperty jarFile = getProject().getObjects().fileProperty();
     private final Property<Path> cacheDir = getProject().getObjects().property(Path.class);
+    private final Property<String> graalDirectoryName = getProject().getObjects().property(String.class);
 
     public BaseGraalCompileTask() {
         setGroup(GradleGraalPlugin.TASK_GROUP);
@@ -70,7 +72,7 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
 
     protected final String getExecutable() {
         return cacheDir.get()
-                .resolve(Paths.get(graalVersion.get(), "graalvm-ce-" + graalVersion.get()))
+                .resolve(Paths.get(graalVersion.get(), javaVersion.get(), graalDirectoryName.get()))
                 .resolve(getArchitectureSpecifiedBinaryPath())
                 .toFile()
                 .getAbsolutePath();
@@ -197,6 +199,15 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
         graalVersion.set(provider);
     }
 
+    @Input
+    public final Provider<String> getJavaVersion() {
+        return javaVersion;
+    }
+
+    public final void setJavaVersion(Provider<String> provider) {
+        javaVersion.set(provider);
+    }
+
     @InputFiles
     @Classpath
     public final Provider<Configuration> getClasspath() {
@@ -227,6 +238,10 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
 
     final void setCacheDir(Path value) {
         cacheDir.set(value);
+    }
+
+    final void setGraalDirectoryName(String value) {
+        graalDirectoryName.set(value);
     }
 
     public final void setOptions(Provider<List<String>> options) {
