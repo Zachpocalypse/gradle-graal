@@ -48,6 +48,7 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
     private final RegularFileProperty outputFile = getProject().getObjects().fileProperty();
     private final Property<String> graalVersion = getProject().getObjects().property(String.class);
     private final Property<String> javaVersion = getProject().getObjects().property(String.class);
+    private final Property<String> vsVarsPath = getProject().getObjects().property(String.class);
     private final Property<Configuration> classpath = getProject().getObjects().property(Configuration.class);
     private final RegularFileProperty jarFile = getProject().getObjects().fileProperty();
     private final Property<Path> cacheDir = getProject().getObjects().property(Path.class);
@@ -149,9 +150,7 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
             String argsString = spec.getArgs().stream()
                     .map(s -> "\"" + s + "\"")
                     .collect(Collectors.joining(" ", " ", "\r\n"));
-            String command = Integer.valueOf(javaVersion.get()) >= 11
-                             ? "call \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\""
-                             : "call \"C:\\Program Files\\Microsoft SDKs\\Windows\\v7.1\\Bin\\SetEnv.cmd\"";
+            String command = "call \"" + vsVarsPath.get() + "\"";
             String cmdContent = "@echo off\r\n"
                                 + command
                                 + outputRedirection + "\r\n"
@@ -163,7 +162,7 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
                 if (!Files.exists(startCmd.getParent())) {
                     Files.createDirectories(startCmd.getParent());
                 }
-                Files.write(startCmd, cmdContent.getBytes(StandardCharsets.UTF_8));
+                Files.writeString(startCmd, cmdContent);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -209,6 +208,15 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
 
     public final void setJavaVersion(Provider<String> provider) {
         javaVersion.set(provider);
+    }
+
+    @Input
+    public final Provider<String> getVsVarsPath() {
+        return vsVarsPath;
+    }
+
+    public final void setVsVarsPath(Provider<String> provider) {
+        vsVarsPath.set(provider);
     }
 
     @InputFiles
