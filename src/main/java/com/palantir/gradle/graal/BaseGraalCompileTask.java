@@ -162,7 +162,7 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
                 if (!Files.exists(startCmd.getParent())) {
                     Files.createDirectories(startCmd.getParent());
                 }
-                Files.writeString(startCmd, cmdContent);
+                Files.write(startCmd, cmdContent.getBytes(StandardCharsets.UTF_8));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
