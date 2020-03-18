@@ -86,7 +86,7 @@ public class GradleGraalPlugin implements Plugin<Project> {
                     task.setOutputName(extension.getOutputName());
                     task.setGraalVersion(extension.getGraalVersion());
                     task.setJavaVersion(extension.getJavaVersion());
-                    task.setVsVarsPath(extension.getVsVarsPath());
+                    task.setWindowsVsVarsPath(extension.getWindowsVsVarsPath());
                     task.setJarFile(jar.map(j -> j.getOutputs().getFiles().getSingleFile()));
                     task.setClasspath(project.getConfigurations().named("runtimeClasspath"));
                     task.setCacheDir(cacheDir);
@@ -104,7 +104,7 @@ public class GradleGraalPlugin implements Plugin<Project> {
                     task.setOutputName(extension.getOutputName());
                     task.setGraalVersion(extension.getGraalVersion());
                     task.setJavaVersion(extension.getJavaVersion());
-                    task.setVsVarsPath(extension.getVsVarsPath());
+                    task.setWindowsVsVarsPath(extension.getWindowsVsVarsPath());
                     task.setJarFile(sharedLibrary.map(j -> j.getOutputs().getFiles().getSingleFile()));
                     task.setClasspath(project.getConfigurations().named("runtimeClasspath"));
                     task.setCacheDir(cacheDir);

@@ -55,7 +55,7 @@ apply plugin: 'idea'
 apply plugin: 'com.palantir.java-format'
 apply from: "${rootDir}/gradle/bintray-publish.gradle"
 
-group 'com.palantir.graal'
+group 'dev.zach.graalvm'
 version gitVersion()
 
 dependencies {
@@ -73,7 +73,7 @@ gradlePlugin {
 
     plugins {
         graal {
-            id = 'com.palantir.graal'
+            id = 'dev.zach.graalvm'
             implementationClass = 'com.palantir.gradle.graal.GradleGraalPlugin'
         }
     }
@@ -87,7 +87,7 @@ pluginBundle {
 
     plugins {
         graal {
-            id = 'com.palantir.graal'
+            id = 'dev.zach.graalvm'
             displayName = 'Palantir Graal Plugin'
         }
     }
