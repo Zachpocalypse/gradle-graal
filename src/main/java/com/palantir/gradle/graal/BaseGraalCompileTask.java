@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.GradleException;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.RegularFileProperty;
@@ -47,17 +48,20 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
     private final ListProperty<String> options = getProject().getObjects().listProperty(String.class);
     private final RegularFileProperty outputFile = getProject().getObjects().fileProperty();
     private final Property<String> graalVersion = getProject().getObjects().property(String.class);
+    private final Property<String> javaVersion = getProject().getObjects().property(String.class);
+    private final Property<String> windowsVsVarsPath = getProject().getObjects().property(String.class);
     private final Property<Configuration> classpath = getProject().getObjects().property(Configuration.class);
     private final RegularFileProperty jarFile = getProject().getObjects().fileProperty();
     private final Property<Path> cacheDir = getProject().getObjects().property(Path.class);
+    private final Property<String> graalDirectoryName = getProject().getObjects().property(String.class);
 
     public BaseGraalCompileTask() {
         setGroup(GradleGraalPlugin.TASK_GROUP);
         this.outputFile.set(getProject()
-                .getLayout()
-                .getBuildDirectory()
-                .dir("graal")
-                .map(d -> d.file(outputName.get() + getArchitectureSpecifiedOutputExtension())));
+            .getLayout()
+            .getBuildDirectory()
+            .dir("graal")
+            .map(d -> d.file(outputName.get() + getArchitectureSpecifiedOutputExtension())));
     }
 
     protected abstract String getArchitectureSpecifiedOutputExtension();
@@ -70,7 +74,7 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
 
     protected final String getExecutable() {
         return cacheDir.get()
-                .resolve(Paths.get(graalVersion.get(), "graalvm-ce-" + graalVersion.get()))
+                .resolve(Paths.get(graalVersion.get(), javaVersion.get(), graalDirectoryName.get()))
                 .resolve(getArchitectureSpecifiedBinaryPath())
                 .toFile()
                 .getAbsolutePath();
@@ -146,11 +150,18 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
                 outputRedirection = " >nul 2>&1";
             }
 
-            String argsString = spec.getArgs().stream().collect(Collectors.joining(" ", " ", "\r\n"));
+            if (windowsVsVarsPath.get().isEmpty()) {
+                throw new GradleException("Couldn't find an installation of Windows SDK 7.1 suitable for GraalVM.");
+            }
+
+            String argsString = spec.getArgs().stream()
+                    .map(s -> "\"" + s + "\"")
+                    .collect(Collectors.joining(" ", " ", "\r\n"));
+            String command = "call \"" + windowsVsVarsPath.get() + "\"";
             String cmdContent = "@echo off\r\n"
-                    + "call \"C:\\Program Files\\Microsoft SDKs\\Windows\\v7.1\\Bin\\SetEnv.cmd\""
-                    + outputRedirection + "\r\n"
-                    + "\"" + spec.getExecutable() + "\"" + argsString;
+                                + command
+                                + outputRedirection + "\r\n"
+                                + "\"" + spec.getExecutable() + "\"" + argsString;
             Path buildPath = getProject().getBuildDir().toPath();
             Path startCmd =
                     buildPath.resolve("tmp").resolve("com.palantir.graal").resolve("native-image.cmd");
@@ -169,7 +180,7 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
             // delayed environment variable expansion via !
             cmdArgs.add("/V:ON");
             cmdArgs.add("/c");
-            cmdArgs.add("\"" + startCmd.toString() + "\"");
+            cmdArgd("\"" + startCmd.toString() + "\"");
             spec.setExecutable("cmd.exe");
             spec.setArgs(cmdArgs);
         }
@@ -189,12 +200,28 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
     }
 
     @Input
-    public final Provider<String> getGraalVersion() {
-        return graalVersion;
-    }
+    public final Provider<String> getGraalVersion() { return graalVersion; }
 
     public final void setGraalVersion(Provider<String> provider) {
-        graalVersion.set(provider);
+	    graalVersion.set(provider);
+    }
+
+    @Input
+    public final Provider<String> getJavaVersion() {
+        return javaVersion;
+    }
+
+    public final void setJavaVersion(Provider<String> provider) {
+        javaVersion.set(provider);
+    }
+
+    @Input
+    public final Provider<String> getWindowsVsVarsPath() {
+        return windowsVsVarsPath;
+    }
+
+    public final void setWindowsVsVarsPath(Provider<String> provider) {
+        windowsVsVarsPath.set(provider);
     }
 
     @InputFiles
@@ -227,6 +254,10 @@ public abstract class BaseGraalCompileTask extends DefaultTask {
 
     final void setCacheDir(Path value) {
         cacheDir.set(value);
+    }
+
+    final void setGraalDirectoryName(String value) {
+        graalDirectoryName.set(value);
     }
 
     public final void setOptions(Provider<List<String>> options) {
